@@ -1,0 +1,5 @@
+Crude program to torture tesk a disk with multi-threaded random reads.
+    
+Build: gcc -o randread randread.c -lpthread
+    
+License: public domain

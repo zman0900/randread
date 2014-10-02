@@ -1,8 +1,8 @@
 /*
     Crude program to torture tesk a disk with multi-threaded random reads.
-    
+
     Build: gcc -o randread randread.c -lpthread
-    
+
     License: public domain
 */
 
@@ -28,25 +28,25 @@ void * doRandomReads(void *arg);
 int main(int argc, char** argv) {
     int devFd;
     int numThreads;
-    
+
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <device file> <threads>\n", argv[0]);
         return 1;
     }
     fileName = argv[1];
     numThreads = atoi(argv[2]);
-    
+
     devFd = open(fileName, O_RDONLY);
     if (devFd == -1) {
         perror("Failed to open file");
         return 1;
     }
-    
+
     endOffset = lseek(devFd, 0, SEEK_END);    
-    printf("Size is %ld\n", endOffset);
-    
+    printf("File size is %ld\n", endOffset);
+
     close(devFd);
-    
+
     for (long i = 0; i < numThreads; i++) {
         pthread_t thread;
         if (pthread_create(&thread, NULL, doRandomReads, (void *)i)) {
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
             return 1;
         }
     }
-    
+
     while (1) {
         sleep(1);
     }
@@ -65,15 +65,15 @@ void * doRandomReads(void *arg) {
     int devFd;
     off_t offset;
     time_t currTime;
-    char buf[4096];
+    char buf[65536]; // 64 KB
     size_t readLen;
-    
+
     threadId = (long)arg;
     printf("Started thread %ld\n", threadId);
 
     time(&currTime);
     srandom(currTime);
-    
+
     devFd = open(fileName, O_RDONLY);
     if (devFd == -1) {
         fprintf(stderr, "Thread %ld - Failed to open file: %s\n", threadId,
@@ -81,22 +81,22 @@ void * doRandomReads(void *arg) {
         perror("Failed to open file");
         exit(1);
     }
-    
+
     uint64_t count = 0;
     while(1) {
         offset = random() % (endOffset - sizeof(buf));
         offset = lseek(devFd, offset, SEEK_SET);
-        
+
         readLen = read(devFd, buf, sizeof(buf));
         if (readLen == -1) {
             fprintf(stderr, "Thread %ld - Read at offset %ld failed: %s\n",
                 threadId, offset, strerror(errno));
             //exit(1);
-        }
-        
-        count++;
-        if (count % 10 == 0) {
-            printf("Thread %ld\t%ld reads.\n", threadId, count);
+        } else {
+            count++;
+            if (count % 10 == 0) {
+                printf("Thread %ld\t%ld reads.\n", threadId, count);
+            }
         }
     }
 }

@@ -64,15 +64,15 @@ void * doRandomReads(void *arg) {
     long threadId;
     int devFd;
     off_t offset;
-    time_t currTime;
+    struct timespec currTime;
     char buf[65536]; // 64 KB
     size_t readLen;
 
     threadId = (long)arg;
     printf("Started thread %ld\n", threadId);
 
-    time(&currTime);
-    srandom(currTime);
+    clock_gettime(CLOCK_MONOTONIC, &currTime);
+    srandom(currTime.tv_nsec);
 
     devFd = open(fileName, O_RDONLY);
     if (devFd == -1) {

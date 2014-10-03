@@ -21,7 +21,8 @@
 #include <unistd.h>
 
 #define ALIGN 4096
-#define BLOCK 65536  // 64KB
+//#define BLOCK 65536  // 64KB
+#define BLOCK 4096
 
 const char* fileName;
 off_t endOffset;
@@ -104,7 +105,7 @@ void * doRandomReads(void *arg) {
             //exit(1);
         } else {
             count++;
-            if (count % 10 == 0) {
+            if (count % 100 == 0) {
                 printf("Thread %ld\t%ld reads.\n", threadId, count);
             }
         }

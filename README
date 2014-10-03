@@ -1,8 +1,8 @@
 Crude program to torture tesk a disk with multi-threaded random reads.
-This doesn't appear to work well after a few minues.  Seems like the random()
-function is returning a small enough set of repeating values that all data gets
-cached in memory because direct IO isn't used.
+Uses direct I/O to prevent the cache from interfering.
     
 Build: gcc -o randread randread.c -lpthread
+
+Usage: randread <file or device> <threads>
     
 License: public domain

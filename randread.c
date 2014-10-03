@@ -20,6 +20,9 @@
 #include <time.h>
 #include <unistd.h>
 
+#define ALIGN 4096
+#define BLOCK 65536  // 64KB
+
 const char* fileName;
 off_t endOffset;
 
@@ -65,16 +68,18 @@ void * doRandomReads(void *arg) {
     int devFd;
     off_t offset;
     struct timespec currTime;
-    char buf[65536]; // 64 KB
+    char *buf;
     size_t readLen;
 
     threadId = (long)arg;
     printf("Started thread %ld\n", threadId);
 
-    clock_gettime(CLOCK_MONOTONIC, &currTime);
-    srandom(currTime.tv_nsec);
+    if (posix_memalign((void **)&buf, ALIGN, BLOCK)) {
+        fprintf(stderr, "Thread %ld - Failed to allocate memory\n", threadId);
+        exit(1);
+    }
 
-    devFd = open(fileName, O_RDONLY);
+    devFd = open(fileName, O_RDONLY | O_DIRECT);
     if (devFd == -1) {
         fprintf(stderr, "Thread %ld - Failed to open file: %s\n", threadId,
             strerror(errno));
@@ -82,12 +87,17 @@ void * doRandomReads(void *arg) {
         exit(1);
     }
 
+    clock_gettime(CLOCK_MONOTONIC, &currTime);
+    srandom(currTime.tv_nsec);
+
     uint64_t count = 0;
     while(1) {
         offset = random() % (endOffset - sizeof(buf));
+        // Align to 4096
+        offset = (offset + ALIGN - 1) & ~(ALIGN - 1);
         offset = lseek(devFd, offset, SEEK_SET);
 
-        readLen = read(devFd, buf, sizeof(buf));
+        readLen = read(devFd, buf, BLOCK);
         if (readLen == -1) {
             fprintf(stderr, "Thread %ld - Read at offset %ld failed: %s\n",
                 threadId, offset, strerror(errno));
